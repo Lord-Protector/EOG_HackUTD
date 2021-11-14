@@ -20,17 +20,14 @@ def on_message(wsapp, message):
         # displays the data
         print(f"data = {message}")
 
-        # uses the average flow as a placeholder for the allocation
-        # allocated_flows = allocate_flow(data)
-
         # creates the suitable framework for the flow allocation
         output = "["
-        for i in range(len(data["operations"])):
-            output = output + "{\"operationId\":\"" + data["operations"][i]["id"] + "\",\"flowRate\":" + str(data["flowRateIn"]/len(data["operations"])) + "},"
+        for i in range(0, len(data["operations"])):
+            output = output + "{\"operationId\":\"" + data["operations"][i]["id"] + "\",\"flowRate\":" + allocate_flow(data)[i] + "},"
         output = output[:-1] + "]"
 
         # prints and sends the flow allocation
-        print(f"output = {output}")
+        print(f"ouput = {output}")
         wsapp.send(output)
     else:
         print(f"response = {message}\n\n")
@@ -42,43 +39,56 @@ def allocate_flow(data):
     flowRateIn = data["flowRateIn"]
     operations = data["operations"]
     names = []
-
-    # step 1
     points = []
     for operation in operations:
         points_row = []
         names.append(operation["name"])
-        points_row.append(operation["revenueStructure"]["dollarsPerDay"])
+        for i in range(21):
+           points_row.append(operation["revenueStructure"][i]["dollarsPerDay"])
         points.append(points_row)
-
-    # step 2
     slopes = []
     for row in points:
         slopes_row = []
-        for i in range(1, len(row)+1):
+        for i in range(1,21):
             dy = row[i] - row[i-1]
             dx = 10000
             slope = dy/dx
             slopes_row.append(slope)
         slopes.append(slopes_row)
-
-
-    # step 3
-    flow_at_maxes = []
+    maxindeces=[]
     for row in points:
-        max_index = row.index(max(row))
-        flow_at_maxes.append(max_index * 10000)
-
-    if sum(flow_at_maxes) < flowRateIn:
-        return flow_at_maxes
+        maxindeces.append(row.index(max(row)))
+    if sum(maxindeces)*10000<=flowRateIn:
+        for i in range(len(maxindeces)):
+            maxindeces[i]=maxindeces[i]*10000
+        return(maxindeces)
     else:
-        slopes_before_maxes = []
-        for slope_row in slopes:
-            slopes_before_maxes.append(slope_row[max_index-1])
-
-        min_slope = min(slopes_before_maxes)
-        min_slope_index = slopes_before_maxes.index(min_slope)
-
+        while sum(maxindeces)*10000-flowRateIn>10000:
+            new=[]
+            for row in maxindeces:
+                new.append(max(points[row][0:maxindeces[row]-1]))
+            workingRow=0
+            workingDif=points[0][maxindeces[0]]-new[0]
+            for row in range(len(maxindeces)):
+                dif=points[row][maxindeces[row]]-new[row]
+                if dif<workingDif:
+                    workingRow=row
+                    workingDif=dif
+            maxindeces[workingRow]=points[workingRow].index([new[workingRow]])
+            if sum(maxindeces)*10000>flowRateIn:
+                maxesofeach=[]
+                for row in range(len(points)):
+                    newint=max(points[row][0:maxindeces[row]-1])
+                    ylimit=points[row][maxindeces[row]]-slopes[row][maxindeces[row]]*(sum(maxindeces)*10000-flowRateIn)
+                    maxesofeach.append([max([newint,ylimit]),ylimit>newint])
+                workingRow=maxesofeach.index(max(maxesofeach))
+                if not maxesofeach[workingRow][1]:
+                    maxindeces[workingRow]=points[workingRow].index(maxesofeach[workingRow][0])
+                else:
+                    maxindeces[workingRow]=maxindeces[workingRow]-sum(maxindeces)+flowRateIn/10000
+            for i in range(len(maxindeces)):
+                maxindeces[i]=maxindeces[i]*10000
+            return(maxindeces)
 
 
 wsapp = websocket.WebSocketApp("wss://2021-utd-hackathon.azurewebsites.net", on_message=on_message, on_error=on_error)
