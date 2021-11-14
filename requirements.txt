@@ -1,0 +1,5 @@
+streamlit
+websocket
+ast
+pandas as pd
+matplotlib.pyplot as plt
