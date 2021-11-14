@@ -7,9 +7,14 @@ def on_error(wsapp, message):
     print(message)
 
 
+pit_volume = 0
+
+
 def on_message(wsapp, message):
     """ A function called for every message received.
         Stores data and sends back the results of the optimization algorithm. """
+
+    global pit_volume
 
     # stores the data as a dictionary
     try:
@@ -37,12 +42,15 @@ def on_message(wsapp, message):
         wsapp.send(output)
     else:
         print(f"response = {message}\n\n")
+        pit_volume = data["currentPitVolume"]
 
 
 def allocate_flow(data):
     """ Stores data and runs the optimization algorithm to determine flow allocation. """
 
-    flowRateIn = data["flowRateIn"]
+    global pit_volume
+
+    flowRateIn = data["flowRateIn"] + pit_volume
     operations = data["operations"]
     names = []
     points = []
@@ -82,7 +90,7 @@ def allocate_flow(data):
             for row in range(len(points)):
                 newint = max(points[row][0:maxindeces[row] - 1])
                 ylimit = points[row][maxindeces[row]] - slopes[row][maxindeces[row]] * (
-                            sum(maxindeces) * 10000 - flowRateIn)
+                        sum(maxindeces) * 10000 - flowRateIn)
                 maxesofeach.append([max([newint, ylimit]), ylimit > newint])
             workingRow = maxesofeach.index(max(maxesofeach))
             if not maxesofeach[workingRow][1]:
