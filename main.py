@@ -97,18 +97,18 @@ def allocate_flow(data):
                     workingRow = row #finding the minimum difference and corresponding row
                     workingDif = dif
             moves.append([workingDif,maxindeces[workingRow],maxindeces[workingRow]-points[workingRow].index(new[workingRow]),workingRow]) #keeping track of the jumps to cheaper peaks
-            maxindeces[workingRow] = points[workingRow].index(new[workingRow]) #updating 
-        if sum(maxindeces) * 10000 > flowRateIn:
+            maxindeces[workingRow] = points[workingRow].index(new[workingRow]) #updating the maxindeces solution set
+        if sum(maxindeces) * 10000 > flowRateIn: #checking if sliding down from one of the current maxes will make it cross the water threshhold
             maxesofeach = []
             for row in range(len(points)):
-                newint = max(points[row][0:maxindeces[row]])
+                newint = max(points[row][0:maxindeces[row]]) #here we consider the next left peaks (newint) and the points where the slide would bring us (ylimit)
                 ylimit = (points[row][maxindeces[row]] - slopes[row][maxindeces[row]-1] * (sum(maxindeces) * 10000 - flowRateIn)) if maxindeces[row]!=0 else 0
-                maxesofeach.append([max([newint, ylimit]), ylimit > newint])
+                maxesofeach.append([max([newint, ylimit]), ylimit > newint]) #array shenanigans to help compare everything and keep track of where it's from
             workingRow = maxesofeach.index(max(maxesofeach))
             if not maxesofeach[workingRow][1]:
                 moves.append([points[workingRow][maxindeces[workingRow]]-max(maxesofeach)[0],maxindeces[workingRow],maxindeces[workingRow]-points[workingRow].index(max(maxesofeach)[0]),workingRow])
                 maxindeces[workingRow] = points[workingRow].index(maxesofeach[workingRow][0])
-                while True:
+                while True: #undoing sacrifices that we got enough water to undo in the last jump
                     for move in moves:
                         if move[2]>flowRateIn/10000-sum(maxindeces):
                             moves.remove(move)
@@ -116,11 +116,11 @@ def allocate_flow(data):
                         break
                     undoing=max(moves)
                     maxindeces[undoing[3]]=undoing[1]
-                    moves.remove(undoing)
+                    moves.remove(undoing) #it removes moves it can't afford and moves it does until the moveset is empty
             else:
-                maxindeces[workingRow] = maxindeces[workingRow] - sum(maxindeces) + flowRateIn / 10000
+                maxindeces[workingRow] = maxindeces[workingRow] - sum(maxindeces) + flowRateIn / 10000 #the fated slide
     for i in range(len(maxindeces)):
-        maxindeces[i] = maxindeces[i] * 10000
+        maxindeces[i] = maxindeces[i] * 10000 #converts from indeces to actual flow rates
     return maxindeces
 
 
