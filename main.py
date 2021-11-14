@@ -4,7 +4,6 @@ import ast
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import asyncio
 
 
 def on_error(wsapp, message):
@@ -69,8 +68,7 @@ def on_message(wsapp, message):
         deltathingy = incrementalRevenue[-1] - incrementalRevenue[-2]
         currentPitVolume.append(data["currentPitVolume"])
         flowRateIn = data["flowRateIn"]
-        # app()
-        asyncio.run(main())
+        app()
 
 
 def allocate_flow(data):
@@ -162,7 +160,7 @@ def on_open(wsapp):
     #app()
 
 
-async def app():
+def app():
     global incrementalRevenue
     global deltathingy
     global currentPitVolume
@@ -214,11 +212,6 @@ async def app():
 
         st.pyplot(fig1)  # pie chart drawing
 
-
-async def main():
-    task = asyncio.create_task(app())
-
-    await task
 
 
 wsapp = websocket.WebSocketApp("wss://2021-utd-hackathon.azurewebsites.net", on_message=on_message, on_error=on_error,
