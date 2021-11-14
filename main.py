@@ -76,7 +76,7 @@ def allocate_flow(data):
         while sum(maxindeces) * 10000 - flowRateIn > 10000:
             new = []
             for row in range(len(maxindeces)):
-                new.append(max(points[row][0:maxindeces[row] - 1]))
+                new.append(max(points[row][:maxindeces[row]]))
             workingRow = 0
             workingDif = points[0][maxindeces[0]] - new[0]
             for row in range(len(maxindeces)):
@@ -88,9 +88,9 @@ def allocate_flow(data):
         if sum(maxindeces) * 10000 > flowRateIn:
             maxesofeach = []
             for row in range(len(points)):
-                newint = max(points[row][0:maxindeces[row] - 1])
-                ylimit = points[row][maxindeces[row]] - slopes[row][maxindeces[row]] * (
-                        sum(maxindeces) * 10000 - flowRateIn)
+                newint = max(points[row][:maxindeces[row]])
+                ylimit = (points[row][maxindeces[row]] - slopes[row][maxindeces[row]-1] * (
+                        sum(maxindeces) * 10000 - flowRateIn)) if maxindeces[row] != 0 else 0
                 maxesofeach.append([max([newint, ylimit]), ylimit > newint])
             workingRow = maxesofeach.index(max(maxesofeach))
             if not maxesofeach[workingRow][1]:
