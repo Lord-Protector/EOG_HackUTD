@@ -7,7 +7,8 @@ def on_error(wsapp, message):
     print(message)
 
 
-pit_volume = 0
+pit_volume = 0    #initializing some variables
+incrementalRevenue=0
 
 
 def on_message(wsapp, message):
@@ -15,10 +16,11 @@ def on_message(wsapp, message):
         Stores data and sends back the results of the optimization algorithm. """
 
     global pit_volume
+    global incrementalRevenue
 
     # stores the data as a dictionary
     try:
-        data = ast.literal_eval(message)
+        data = ast.literal_eval(message) 
     except:
         print("Invalid data type.")
         print(f"{message}\n\n")
@@ -42,7 +44,11 @@ def on_message(wsapp, message):
         wsapp.send(output)
     else:
         print(f"response = {message}\n\n")
+        #storing the data we need to graph
         pit_volume = data["currentPitVolume"]
+        temp=incrementalRevenue
+        incrementalRevenue=data["incrementalRevenue"]
+        deltathingy=incrementalRevenue-temp
 
 
 def allocate_flow(data):
@@ -55,13 +61,17 @@ def allocate_flow(data):
     names = []
     points = []
     for operation in operations:
+        #makes a 2d array of the revenue points organized by their operation and then location
         points_row = []
         names.append(operation["name"])
         for i in range(21):
+            #the index implies the flow rate of the point because flow=index*10000
             points_row.append(operation["revenueStructure"][i]["dollarsPerDay"])
         points.append(points_row)
     slopes = []
     for row in points:
+        #2d array of the slopes between each point
+        #linear interpolation, baby
         slopes_row = []
         for i in range(1, 21):
             dy = row[i] - row[i - 1]
@@ -71,22 +81,23 @@ def allocate_flow(data):
         slopes.append(slopes_row)
     maxindeces = []
     for row in points:
+        #initializing our output as the flow rates that maximize the profit for each operation without considering the limit on inflow
         maxindeces.append(row.index(max(row)))
-    if sum(maxindeces) * 10000 > flowRateIn:
+    if sum(maxindeces) * 10000 > flowRateIn: #continue only if the current water use is out of bounds
         moves=[]
         while sum(maxindeces) * 10000 - flowRateIn > 10000:
             new = []
-            for row in range(len(maxindeces)):
-                new.append(max(points[row][0:maxindeces[row]]))
+            for row in range(len(maxindeces)): #the maximum revenues that cost less water than the current maxes
+                new.append((max(points[row][0:maxindeces[row]])) if maxindeces[row]!=0 else -99999999) #hoping -99999999 is low enough to keep dif so high it's out of competition
             workingRow = 0
             workingDif = points[0][maxindeces[0]] - new[0]
             for row in range(len(maxindeces)):
                 dif = points[row][maxindeces[row]] - new[row]
                 if dif < workingDif:
-                    workingRow = row
+                    workingRow = row #finding the minimum difference and corresponding row
                     workingDif = dif
-            moves.append([workingDif,maxindeces[workingRow],maxindeces[workingRow]-points[workingRow].index(new[workingRow]),workingRow])
-            maxindeces[workingRow] = points[workingRow].index(new[workingRow])
+            moves.append([workingDif,maxindeces[workingRow],maxindeces[workingRow]-points[workingRow].index(new[workingRow]),workingRow]) #keeping track of the jumps to cheaper peaks
+            maxindeces[workingRow] = points[workingRow].index(new[workingRow]) #updating 
         if sum(maxindeces) * 10000 > flowRateIn:
             maxesofeach = []
             for row in range(len(points)):
@@ -95,7 +106,7 @@ def allocate_flow(data):
                 maxesofeach.append([max([newint, ylimit]), ylimit > newint])
             workingRow = maxesofeach.index(max(maxesofeach))
             if not maxesofeach[workingRow][1]:
-                moves.append([points[workingRow][maxindeces[workingRow]]-max(maxesofeach),maxindeces[workingRow],maxindeces[workingRow]-points[workingRow].index(max(maxesofeach)),workingRow])
+                moves.append([points[workingRow][maxindeces[workingRow]]-max(maxesofeach)[0],maxindeces[workingRow],maxindeces[workingRow]-points[workingRow].index(max(maxesofeach)[0]),workingRow])
                 maxindeces[workingRow] = points[workingRow].index(maxesofeach[workingRow][0])
                 while True:
                     for move in moves:
