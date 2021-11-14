@@ -1,12 +1,16 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import main
+import ast
 
 st.set_page_config(layout="wide")
 
-# formatting function for pie chart
+
 def my_fmt(x):
-    return '{:.1f}%\n({:.0f})'.format(x, totalWater*x/100)
+    """ formatting function for pie chart """
+
+    return '{:.1f}%\n({:.0f})'.format(x, totalWater * x / 100)
 
 
 # Title
@@ -17,27 +21,30 @@ col1, col2 = st.columns(2)
 
 with col1:
     # Revenue total
-    revenue = 6000000
-    deltathingy = 4000
+    revenue = sum(main.incrementalRevenue)
+    deltathingy = main.incrementalRevenue[-1] - main.incrementalRevenue[-2]
     st.metric(label="Cumulative Revenue", value="$" + str(revenue), delta=deltathingy)
 
     st.subheader("Instantaneous Revenue (dollars/day)")
     # Line Chart for Revenue
-    chart_data = pd.DataFrame([40000, 45000, 35000, 60000, 78000, 20000], columns=[''])
+    chart_data = pd.DataFrame(main.incrementalRevenue[-12:], columns=[''])
     st.line_chart(chart_data)
-
 
     st.subheader("Volume of Water in the Pit (bbls)")
 
-    maxPit = 1000
-    chart_data = pd.DataFrame([0, 6, 10, 2, 60, 30, 45], columns=[''])
+    maxPit = 100000
+    chart_data = pd.DataFrame(main.currentPitVolume[-12:], columns=[''])
     st.line_chart(chart_data)
 
 with col2:
     # Pie chart
-    totalWater = 10000 + 20000 + 30000 + 40000
-    labels = ["Name1", "Name2", "Name3", "Name4"]
-    sizes = [10000, 20000, 30000, 40000]
+    totalWater = main.flowRateIn
+    labels = []
+    for operation in main.data["operations"]:
+        labels.append(ast.literal_eval(operation)["name"])
+    sizes = []
+    for operation in main.output:
+        sizes.append(ast.literal_eval(operation)["flowRate"])
     # explode = (0, 0.1, 0, 0)  # only "explode" the 2nd slice
 
     fig1, ax1 = plt.subplots()
