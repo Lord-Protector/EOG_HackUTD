@@ -1,4 +1,4 @@
 streamlit
 websocket
 pandas
-matplotlib.pyplot
+matplotlib
