@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"
+</head>
+<body>
+<h1>Super Duper Dynamic GUI</h1>
+<p id="t"></p>
+<img src="pichat.png" alt="waiting for first data" id="i">
+<script>
+	const th=document.getElementById('t')
+	const pie=document.getElementById('i')
+	const htm=new XMLHttpRequest()
+	htm.onreadystatechange=()=>{
+		if (htm.readyState===4){
+			th.innerHTML=htm.responseText.substr(2,htm.response.substr(0,1)+2)
+			pie.src="data:image/png;base64, "+htm.response.substr(htm.response.substr(0,1)+4,htm.response.length-1)
+		}
+	}
+	setInterval(()=>{
+		htm.open('GET','data.json')
+		htm.send()
+	},5000)
+</script>
+</body>
+</html>
